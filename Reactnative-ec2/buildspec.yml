@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+   install:
+    runtime-versions:
+      android: 29
+      java: corretto8
+      nodejs: 12
+      
+   pre_build:
+    commands:
+      - git config --global url."https://github.com/".insteadOf git://github.com/
+      - npm install
+      
+   build:
+    commands: 
+      - npm i --save-dev @react-native-community/cli
+      - npm install -g react-native-cli
+      - yarn
+      - react-native link
+      - cd android
+      - chmod +x gradlew
+      - ./gradlew clean
+      - ./gradlew assembleDebug
+      
+artifacts:
+  files:
+      - '**/*'
+  discard-paths: 'yes'

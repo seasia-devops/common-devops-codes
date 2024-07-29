@@ -1,0 +1,15 @@
+version: 0.0
+os: linux
+files:
+- source: /scripts
+  destination: /home/ubuntu/react-native
+permissions:
+- object: /home/ubuntu/react-native
+pattern: “**”
+owner: ubuntu
+group: ubuntu
+mode: 775
+hooks:
+AfterInstall:
+- location: scripts/dependencies_install.sh
+runas: ubuntu
