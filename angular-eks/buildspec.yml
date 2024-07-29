@@ -1,0 +1,38 @@
+version: 0.2
+    
+phases:
+  install:
+    commands:
+      - curl -sS -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator
+      - curl -sS -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl ./aws-iam-authenticator
+      - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      - export PATH=$PWD/:$PATH
+      - curl -s https://getcomposer.org/installer | php
+      - mv  composer.phar /usr/local/bin/composer
+      - php --version
+      - composer global require laravel/installer
+      
+  pre_build:
+    commands:
+      - echo Entered the pre_build phase...  
+      - echo Logging in to Amazon EKS...
+      - CREDENTIALS=$(aws sts assume-role --role-arn arn:aws:iam::492352392159:role/kubectlroleforcodebuild --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      - aws eks --region ap-south-1 update-kubeconfig --name angular
+      - cat $HOME/.kube/config
+      - kubectl create -f deployment.yaml
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Change directory to secondary source
+      - cd $CODEBUILD_SRC_DIR
+      - echo List directory
+      - ls -la
+      - echo Push the latest image to cluster
+      - kubectl cluster-info
+      #- kubectl create -f deployment.yaml
